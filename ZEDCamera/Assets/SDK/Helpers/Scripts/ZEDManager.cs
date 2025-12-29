@@ -2070,6 +2070,8 @@ public class ZEDManager : MonoBehaviour
 
         if (dontDestroyOnLoad) DontDestroyOnLoad(transform.root); //If you want the ZED rig not to be destroyed when loading a scene.
 
+        ApplySavedInputSettings();
+
         //Set first few parameters for initialization. This will get passed to the ZED SDK when initialized.
         initParameters = new sl.InitParameters();
         initParameters.resolution = resolution;
@@ -2190,6 +2192,22 @@ public class ZEDManager : MonoBehaviour
     {
         //adjust layers for multiple camera
         //setLayersForMultiCamera ();
+    }
+
+    private void ApplySavedInputSettings()
+    {
+        inputType = ZEDInputSettings.LoadInputType(inputType);
+
+        if (inputType == sl.INPUT_TYPE.INPUT_TYPE_SVO)
+        {
+            svoInputFileName = ZEDInputSettings.LoadSvoPath(svoInputFileName);
+        }
+        else if (inputType == sl.INPUT_TYPE.INPUT_TYPE_STREAM)
+        {
+            var stream = ZEDInputSettings.LoadStream(streamInputIP, streamInputPort);
+            streamInputIP = stream.ip;
+            streamInputPort = stream.port;
+        }
     }
 
     #region INITIALIZATION
