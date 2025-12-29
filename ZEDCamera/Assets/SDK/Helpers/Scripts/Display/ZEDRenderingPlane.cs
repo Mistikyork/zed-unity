@@ -170,6 +170,7 @@ public class ZEDRenderingPlane : MonoBehaviour
     /// Point light structure for virtual lights on the real world.
     /// Gets sent to the shader via a compute buffer.
     /// </summary>
+    [SerializeField]
     public struct PointLight
     {
         /// <summary>
@@ -193,6 +194,7 @@ public class ZEDRenderingPlane : MonoBehaviour
     /// <summary>
     /// Holds a slot for all point lights that should be cast on the real world.
     /// </summary>
+    [SerializeField]
     public PointLight[] pointLights = new PointLight[NUMBER_POINT_LIGHT_MAX];
     /// <summary>
     /// The size, or 'stride', of each PointLight in bytes. Needed to construct computeBufferPointLight.
@@ -207,6 +209,7 @@ public class ZEDRenderingPlane : MonoBehaviour
     /// <summary>
     /// Structure of the spotlight send to the shader
     /// </summary>
+    [SerializeField]
     public struct SpotLight
     {
         /// <summary>
@@ -234,6 +237,7 @@ public class ZEDRenderingPlane : MonoBehaviour
     /// <summary>
     /// Holds a slot for all spotlights that should be cast on the real world.
     /// </summary>
+    [SerializeField]
     public SpotLight[] spotLights = new SpotLight[NUMBER_SPOT_LIGHT_MAX];
 
     /// <summary>
@@ -387,7 +391,7 @@ public class ZEDRenderingPlane : MonoBehaviour
         //Get the current camera and set the aspect ratio.
         zedManager = gameObject.transform.parent.GetComponent<ZEDManager>();
         cam = GetComponent<Camera>();
-        cam.aspect = aspect;
+        //cam.aspect = aspect;
         cam.renderingPath = RenderingPath.UsePlayerSettings; //Assigns the camera's rendering path to be consistent with the project's settings.
 
         //Make the canvas allow rendering this camera.
@@ -507,6 +511,7 @@ public class ZEDRenderingPlane : MonoBehaviour
 
         zedCamera = zedManager.zedCamera;
         SetTextures(zedCamera, viewMode);
+        UpdateAspectFromSource();
         canvas.SetActive(true);
         canvas.transform.SetParent(cam.transform);
         ConfigureLightAndShadow(cam.actualRenderingPath);
@@ -523,18 +528,32 @@ public class ZEDRenderingPlane : MonoBehaviour
         //Set the camera's parameters based on the ZED's, and scale the screen based on its distance.
         if (zedCamera.IsCameraReady)
         {
-            //cam.projectionMatrix = zedCamera.Projection;
-            SetProjection(nearplane, farplane);
             cam.nearClipPlane = nearplane;
             cam.farClipPlane = farplane;
-            //mainCamera.nearClipPlane = 0.1f;
-            //mainCamera.farClipPlane = 500.0f;
-            scale(canvas, GetFOVYFromProjectionMatrix(cam.projectionMatrix));
+
             cam.fieldOfView = zedCamera.VerticalFieldOfView * Mathf.Rad2Deg;
+
+            SetProjection(nearplane, farplane);
+
+            Matrix4x4 P;
+
+            if (cam.stereoEnabled)
+            {
+                P = (side == 0)
+                    ? cam.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left)
+                    : cam.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
+            }
+            else
+            {
+                P = cam.projectionMatrix;
+            }
+
+            // Правильный off-axis масштаб
+            ScaleFromProjection(canvas, P);
         }
         else //Just scale the screen.
         {
-            scale(canvas, cam.fieldOfView);
+            ScaleFromProjection(canvas, cam.projectionMatrix);
         }
     }
 
@@ -1215,6 +1234,7 @@ public class ZEDRenderingPlane : MonoBehaviour
 	private void scale(GameObject screen, float fov)
     {
         float height = Mathf.Tan(0.5f * fov) * Vector3.Distance(screen.transform.localPosition, Vector3.zero) * 2;
+        //height *= 0.95f;
         screen.transform.localScale = new Vector3((height * aspect), height, 1);
     }
 
@@ -1224,6 +1244,55 @@ public class ZEDRenderingPlane : MonoBehaviour
         float width = Mathf.Tan(0.5f * fovH) * Vector3.Distance(screen.transform.localPosition, Vector3.zero) * 2;
         screen.transform.localScale = new Vector3(width, height, 1);
     }
+
+    void ScaleFromProjection(GameObject screen, Matrix4x4 P)
+    {
+        // off-center frustum tangents (Unity/OpenGL layout m[row,col])
+        float tanLeft = -(1f + P[0, 2]) / P[0, 0];
+        float tanRight = (1f - P[0, 2]) / P[0, 0];
+        float tanBottom = -(1f + P[1, 2]) / P[1, 1];
+        float tanTop = (1f - P[1, 2]) / P[1, 1];
+
+        // расстояние именно вдоль локального Z камеры, а не magnitude
+        float d = Mathf.Abs(screen.transform.localPosition.z);
+
+        float width = (tanRight - tanLeft) * d;
+        float height = (tanTop - tanBottom) * d;
+        screen.transform.localScale = new Vector3(width, height, 1f);
+    }
+
+    private void UpdateAspectFromSource()
+    {
+        // 1) Можно посчитать аспект источника — полезно для логов/диагностики,
+        //    но НЕ использовать его для геометрического рескейла в VR.
+        float a = aspect;
+        if (textureEye != null && textureEye.width > 0 && textureEye.height > 0)
+            a = (float)textureEye.width / textureEye.height;
+        else if (resolution.width > 0 && resolution.height > 0)
+            a = (float)resolution.width / resolution.height;
+
+        // Обновим поле для информации (но не трогаем cam.aspect в XR)
+        aspect = a;
+
+        // 2) В VR/стерео берём реальную off-axis матрицу соответствующего глаза.
+        //    В монокамере — обычную projectionMatrix.
+        if (!cam) return;
+
+        Matrix4x4 P;
+        if (cam.stereoEnabled)
+        {
+            var eye = (side == 0) ? Camera.StereoscopicEye.Left : Camera.StereoscopicEye.Right;
+            P = cam.GetStereoProjectionMatrix(eye);
+        }
+        else
+        {
+            P = cam.projectionMatrix;
+        }
+
+        // 3) Правильный рескейл плоскости из матрицы (без использования aspect).
+        if (canvas) ScaleFromProjection(canvas, P);
+    }
+
 
 #if !ZED_HDRP && !ZED_URP
     /// <summary>

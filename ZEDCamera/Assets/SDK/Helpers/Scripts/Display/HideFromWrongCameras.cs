@@ -105,17 +105,7 @@ public class HideFromWrongCameras : MonoBehaviour
 
     private void DrawCanvas(Camera drawcam)
     {
-        float referenceAspect = 16.0f / 9.0f;
-        float currentAspect = (float)Screen.width / Screen.height;
-
-        // Compute scale factors for each axis to zoom in
-        float scaleFactorX = currentAspect < referenceAspect ? referenceAspect / currentAspect : 1.0f;
-        float scaleFactorY = currentAspect > referenceAspect ? currentAspect / referenceAspect : 1.0f;
-        Vector3 newScale = new Vector3(transform.localScale.x * scaleFactorX, transform.localScale.y * scaleFactorY, transform.localScale.z);
-
-        Matrix4x4 canvastrs = Matrix4x4.TRS(transform.position, transform.rotation, newScale);
-        Graphics.DrawMesh(mfilter.mesh, canvastrs, rend.material, gameObject.layer, drawcam);
-
+        Graphics.DrawMesh(mfilter.mesh, transform.localToWorldMatrix, rend.material, gameObject.layer, drawcam);
     }
 #else
 
@@ -132,7 +122,7 @@ public class HideFromWrongCameras : MonoBehaviour
 
         //rend.enabled = false;
 
-         //If it's a Unity scene camera, always show it. 
+        //If it's a Unity scene camera, always show it. 
         if (currentcam.name.Contains("scenecamera", System.StringComparison.OrdinalIgnoreCase)) //There are more robust ways of checking this, but they are expensive. 
         {
             rend.enabled = true;

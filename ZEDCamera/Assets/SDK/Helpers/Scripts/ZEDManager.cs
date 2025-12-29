@@ -1752,9 +1752,8 @@ public class ZEDManager : MonoBehaviour
             return ZEDLayers.arlayer;
         }
     }
-    
-    //[SerializeField]
-    //[HideInInspector]
+    [SerializeField]
+    [HideInInspector]
     //private int arlayer = 30;
 
     /////////////////////////////////////
@@ -1870,8 +1869,8 @@ public class ZEDManager : MonoBehaviour
                 SubsystemManager.GetSubsystems<XRInputSubsystem>(subsystems);
                 for (int i = 0; i < subsystems.Count; i++)
                 {
-                     subsystems[i].TrySetTrackingOriginMode(TrackingOriginModeFlags.Device);
-                     subsystems[i].TryRecenter();
+                    subsystems[i].TrySetTrackingOriginMode(TrackingOriginModeFlags.Device);
+                    subsystems[i].TryRecenter();
                 }
             }
             else
@@ -2090,7 +2089,7 @@ public class ZEDManager : MonoBehaviour
         initParameters.asyncGrabCameraRecovery = asyncGrabCameraRecovery;
         initParameters.grabComputeCappingFPS = grabComputeCappingFPS;
         initParameters.enableImageValidityCheck = enableImageValidityCheck;
-	    initParameters.sdkVerbose = wrapperVerbose ? 1 : 0;
+        initParameters.sdkVerbose = wrapperVerbose ? 1 : 0;
 
         //Check if this rig is a stereo rig. Will set isStereoRig accordingly.
         CheckStereoMode();
@@ -2123,7 +2122,6 @@ public class ZEDManager : MonoBehaviour
         {
             initParameters.ipStream = streamInputIP;
             initParameters.portStream = (ushort)streamInputPort;
-
         }
 
         versionZED = "[SDK]: " + sl.ZEDCamera.GetSDKVersion() + " [Plugin]: " + sl.ZEDCamera.PluginVersion.ToString();
@@ -2221,9 +2219,9 @@ public class ZEDManager : MonoBehaviour
 
     private System.Collections.IEnumerator InitZED()
     {
-        DEPTH_MODE[] NeuralModes = {DEPTH_MODE.NEURAL_LIGHT, DEPTH_MODE.NEURAL, DEPTH_MODE.NEURAL_PLUS };
-        
-        foreach (var mode in NeuralModes) 
+        DEPTH_MODE[] NeuralModes = { DEPTH_MODE.NEURAL_LIGHT, DEPTH_MODE.NEURAL, DEPTH_MODE.NEURAL_PLUS };
+
+        foreach (var mode in NeuralModes)
         {
             if (initParameters.depthMode == mode)
             {
@@ -2479,7 +2477,7 @@ public class ZEDManager : MonoBehaviour
         }
 
     }
-#endregion
+    #endregion
 
     #region IMAGE_ACQUIZ
     /// <summary>
@@ -2525,7 +2523,7 @@ public class ZEDManager : MonoBehaviour
                 }
                 else if (!pauseSVOReading)
                 {
-                    ZEDGrabError = zedCamera.Grab(ref runtimeParameters);                
+                    ZEDGrabError = zedCamera.Grab(ref runtimeParameters);
                 }
 
                 currentFrame = zedCamera.GetSVOPosition();
@@ -2905,7 +2903,7 @@ public class ZEDManager : MonoBehaviour
             arRig.LateUpdateHmdRendering(); //Update textures on final AR rig for output to the headset.
         }
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Event called when camera is disconnected
@@ -3130,7 +3128,7 @@ public class ZEDManager : MonoBehaviour
             objectDetectionRuntimeParameters.objectConfidenceThreshold[(int)sl.OBJECT_CLASS.ELECTRONICS] = OD_electronicsDetectionConfidenceThreshold;
             objectDetectionRuntimeParameters.objectConfidenceThreshold[(int)sl.OBJECT_CLASS.FRUIT_VEGETABLE] = OD_fruitVegetableDetectionConfidenceThreshold;
             objectDetectionRuntimeParameters.objectConfidenceThreshold[(int)sl.OBJECT_CLASS.SPORT] = OD_sportDetectionConfidenceThreshold;
- 
+
             objectDetectionRuntimeParameters.objectClassFilter = new int[(int)sl.OBJECT_CLASS.LAST];
             objectDetectionRuntimeParameters.objectClassFilter[(int)sl.OBJECT_CLASS.PERSON] = Convert.ToInt32(objectClassPersonFilter);
             objectDetectionRuntimeParameters.objectClassFilter[(int)sl.OBJECT_CLASS.VEHICLE] = Convert.ToInt32(objectClassVehicleFilter);
@@ -3241,7 +3239,7 @@ public class ZEDManager : MonoBehaviour
         sl.Objects objsbuffer = new sl.Objects();
 
         sl.ERROR_CODE res = sl.ERROR_CODE.FAILURE;
-        
+
         if (objectDetectionModel == sl.OBJECT_DETECTION_MODEL.CUSTOM_BOX_OBJECTS)
         {
             customObjectDetectionRuntimeParameters.objectClassDetectionProperties = new List<CustomObjectDetectionProperties>();
