@@ -2194,19 +2194,23 @@ public class ZEDManager : MonoBehaviour
         //setLayersForMultiCamera ();
     }
 
-    private void ApplySavedInputSettings()
+    private void ApplySavedInputSettingsFromPrefs()
     {
-        inputType = ZEDInputSettings.LoadInputType(inputType);
+        // примерные ключи Ч поставь те же, что в твоЄм ZEDInputSettings
+        int type = PlayerPrefs.GetInt("ZED_InputType", (int)sl.INPUT_TYPE.INPUT_TYPE_SVO);
+        inputType = (sl.INPUT_TYPE)type;
+
+        int depth = PlayerPrefs.GetInt("ZED_DepthMode", (int)depthMode);
+        depthMode = (sl.DEPTH_MODE)depth;
 
         if (inputType == sl.INPUT_TYPE.INPUT_TYPE_SVO)
         {
-            svoInputFileName = ZEDInputSettings.LoadSvoPath(svoInputFileName);
+            svoInputFileName = PlayerPrefs.GetString("ZED_SVO_Path");
         }
         else if (inputType == sl.INPUT_TYPE.INPUT_TYPE_STREAM)
         {
-            var stream = ZEDInputSettings.LoadStream(streamInputIP, streamInputPort);
-            streamInputIP = stream.ip;
-            streamInputPort = stream.port;
+            streamInputIP = PlayerPrefs.GetString("ZED_Stream_IP", "192.168.1.125");
+            streamInputPort = PlayerPrefs.GetInt("ZED_Stream_Port", 30000);
         }
     }
 
